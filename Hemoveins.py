@@ -2,10 +2,24 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 
 st.set_page_config(page_title="Hemoveins", page_icon="❤️")   
-st.title("Hemoveins")
+st.markdown("<h1 style='color:#941E11 ;'>Hemoveins</h1>",unsafe_allow_html=True)
 
 API_KEY = open('secret').read()
 client = InferenceClient(api_key=API_KEY)
+
+with st.sidebar:
+    st.markdown("""<style>emergency {border-radius: 8px;padding: 15px;margin: 15px 0;}</style>""", unsafe_allow_html=True)
+    st.markdown('<div class="emergency">', unsafe_allow_html=True)
+    st.markdown("## 🚨 Emergency Instructions🚨")
+    st.markdown("""
+    **Call 997 immediately if you have:**
+    - Chest pain
+    - Fever above 38.5°C
+    - Difficulty breathing
+    - Severe pain unrelieved by painkillers""")
+    
+    if st.button("Call Emergency Services🚑🆘", type="secondary", use_container_width=True):
+        st.markdown('</div>', unsafe_allow_html=True)
 
 sys_prompt = ("You are a doctor expert in sickle cell anemia. Your role has two phases:\n"
 "1. Analyze patient answers and provide medical advice. For initial analysis consider:\n"
@@ -85,14 +99,19 @@ if not st.session_state.analysis:
         st.subheader("Medical Advice Based on Your Answers:")
         st.markdown("You can now ask any questions.")
 
+st.markdown("""<style>[data-testid="stChatMessage"] {background-color: transparent !important;padding: 0 !important;box-shadow: none !important;}</style>""", unsafe_allow_html=True)
 for msg in st.session_state.messages:
     if msg["role"] == "user" and "Patient's Responses" not in msg["content"]:
-        st.chat_message("You").write(msg['content'])
+        with st.chat_message("user"):
+            st.markdown(f'<div style="background-color: #FFF8E7; border-radius: 15px; padding: 15px; margin: 10px 0; max-width: 70%; margin-left: 30%;">'f'<span style="color: #565248; font-weight: bold;">You:</span><br>{msg["content"]}'f'</div>', unsafe_allow_html=True)
     elif msg["role"] == "assistant":
-        chat = st.chat_message("HemoBot")
-        if isinstance(msg['content'], str):            
-            chat.write(msg['content'])
-        else:
-            full_response = chat.write_stream(msg['content'])
-            msg['content'] = full_response 
-
+        with st.chat_message("assistant"):
+            container = st.empty()
+            if isinstance(msg['content'], str):
+                container.markdown(f'<div style="background:#F9DCE0;border-radius:15px;padding:15px;margin:10px 0;max-width:70%;margin-right:30%">'f'<span style="color:#D7417D;font-weight:bold">HemoBot:</span>'f'<div style="margin-top:8px">{msg["content"]}</div>'f'</div>',unsafe_allow_html=True)
+            else:
+                full_response = ""
+                for chunk in msg['content']:
+                    full_response += chunk
+                    container.markdown(f'<div style="background:#F9DCE0;border-radius:15px;padding:15px;margin:10px 0;max-width:70%;margin-right:30%">'f'<span style="color:#D7417D;font-weight:bold">HemoBot:</span>'f'<div style="margin-top:8px">{full_response}</div>'f'</div>',unsafe_allow_html=True)
+                msg['content'] = full_response
